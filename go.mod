@@ -1,13 +1,13 @@
 module github.com/ctfer-io/ctfd-setup
 
-go 1.22.2
+go 1.25.4
 
 require (
-	github.com/ctfer-io/go-ctfd v0.15.1
+	github.com/ctfer-io/go-ctfd v0.16.0
 	github.com/invopop/jsonschema v0.13.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v3 v3.6.1
+	github.com/urfave/cli/v3 v3.6.2
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.1
