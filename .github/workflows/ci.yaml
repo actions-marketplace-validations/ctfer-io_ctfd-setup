@@ -22,12 +22,12 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup Go
-        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version-file: 'go.mod'
 
       - name: Cache go modules
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -35,7 +35,9 @@ jobs:
 
       - name: Run unit tests
         run: |
-          go test ./ -run=^Test_U -coverprofile=unit.out -json | tee -a gotest.json
+          go test ./ -run=^Test_U -coverprofile=unit.cov
+        env:
+          CTFD_URL: http://localhost:8000 # needed because TestMain looks for it, we actually don't use it
 
       - name: Wait for CTFd server
         run: |
@@ -55,29 +57,32 @@ jobs:
             exit 1
           fi
 
-      - name: Run integration test
+      - name: Run integration tests
         run: |
-          ./hack/examples.sh
+          go test ./ -run=^Test_I_ -v -cover -coverprofile=integration.cov
+
+          go tool covdata textfmt -i=coverdir -o merged.cov
+          sed -i '/^\//d' merged.cov
         env:
-          URL: http://localhost:8000
+          CTFD_URL: http://localhost:8000
 
       - name: Merge coverage data
         run: |
           go install go.shabbyrobe.org/gocovmerge/cmd/gocovmerge@fa4f82cfbf4d57c646c1ed0f35002bf1b89fbf7a
-          gocovmerge unit.out integration.out > cov.out
+          gocovmerge unit.cov integration.cov merged.cov > all.cov
 
       - name: Upload coverage to Coveralls
-        uses: shogo82148/actions-goveralls@25f5320d970fb565100cf1993ada29be1bb196a1 # v1.10.0
+        uses: shogo82148/actions-goveralls@9606dbc5ac5cf888a0e9ef901515c3cd516a2790 # v1.11.0
         with:
-          path-to-profile: cov.out
+          path-to-profile: all.cov
 
   go-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version-file: go.mod
       
       - name: go-lint
-        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9.2.0
+        uses: golangci/golangci-lint-action@82606bf257cbaff209d206a39f5134f0cfbfd2ee # v9.2.1
